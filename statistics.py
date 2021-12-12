@@ -2,8 +2,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import itertools
-from sklearn.metrics import confusion_matrix, mean_squared_error, classification_report
+from sklearn.metrics import confusion_matrix, mean_squared_error
+from sklearn import metrics
+from data_characteristics import CLASSES
 from get_config import config
+
 
 
 def Plot_Learning_Curves(history):
@@ -76,9 +79,7 @@ def plot_confusion_matrix(cm,
     plt.show()
 
 
-def display_other_metrics(classes, matrix, y_test, preds):
-    categories = ['COVID-19', 'Non-COVID-19']
-    print('Class:', categories[int(classes)])
+def display_other_metrics(matrix, y_test, preds):
 
     FP = matrix.sum(axis=0) - np.diag(matrix)
     FN = matrix.sum(axis=1) - np.diag(matrix)
@@ -132,7 +133,15 @@ def generate_results_examples(preds, x_test, y_test):
     plt.show()
 
 
-def generate_confusion_matrixes(matrix):
+def generate_confusion_matrixes(y_test, preds):
+    class_metrics = metrics.classification_report(y_test, preds, target_names=CLASSES, zero_division=0)
+    print(class_metrics)
+    matrix = metrics.confusion_matrix(y_test.argmax(axis=1), preds.argmax(axis=1))
+    draw_matrixes(matrix=matrix)
+    return matrix
+
+
+def draw_matrixes(matrix):
     plot_confusion_matrix(cm=np.array(matrix),
                           normalize=False,
                           target_names=config.content['CLASSES'],
@@ -142,3 +151,13 @@ def generate_confusion_matrixes(matrix):
                           normalize=True,
                           target_names=config.content['CLASSES'],
                           title="Confusion Matrix, Normalized")
+
+
+def predict_single(test_image, model, batch_size):
+    x = np.expand_dims(test_image, axis=0)
+    x = x / 255
+    images = np.vstack([x])
+    classes = model.predict(images, batch_size=batch_size)
+    classes = np.argmax(classes, axis=1)
+    categories = CLASSES
+    print('Class:', categories[int(classes)])

@@ -1,12 +1,10 @@
 from get_config import config
 import tensorflow as tf
-from tensorflow.keras import layers, models, optimizers
-from tensorflow.keras.layers import Dense, BatchNormalization, Dropout, Activation, GlobalAveragePooling2D, Input
-from tensorflow.keras.models import Sequential, load_model, Model
+from tensorflow.keras import layers
+from tensorflow.keras.layers import Dense, BatchNormalization, Dropout
+from tensorflow.keras.models import Sequential
 from tensorflow.keras import regularizers
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
-from tensorflow.keras.preprocessing import image
+
 from tensorflow.keras.layers.experimental import preprocessing
 
 img_augmentation = Sequential([
@@ -39,19 +37,16 @@ def build_model(OPTIMIZER, LOSS, METRICS, NETWORK):
     model = None
     inputs = layers.Input(shape=config.content['input_shape'])
     x = img_augmentation(inputs)
-    x = inputs
     baseModel = NETWORK(include_top=False, input_tensor=x, weights="imagenet", pooling='avg')
 
     baseModel.trainable = False
 
     x = BatchNormalization(axis=-1, name="Batch-Normalization-1")(baseModel.output)
     x = Dense(512, activation='relu', kernel_regularizer=regularizers.L1L2(l1=1e-5, l2=1e-4))(x)
-    # x = Dense(8, activation='sigmoid', kernel_regularizer=regularizers.L1L2(l1=1e-5, l2=1e-4))(x)
     x = BatchNormalization(axis=-1, name="Batch-Normalization-2")(x)
     x = Dropout(.2, name="Dropout-1")(x)
 
     x = Dense(256, activation='relu')(x)
-    # x = Dense(2, activation='sigmoid')(x)
     x = BatchNormalization(axis=-1, name="Batch-Normalization-3")(x)
 
     outputs = Dense(len(config.content['CLASSES']), activation="softmax", name="Classifier")(x)
